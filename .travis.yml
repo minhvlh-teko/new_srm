@@ -1,0 +1,47 @@
+services: docker
+env:
+  global:
+    - PROJECT_PATH=/var/www/api-v2.wms.phongvu.vn
+sudo: required
+jobs:
+  include:
+    - stage: test
+      language: python
+      python: '3.6'
+      cache: pip
+      services:
+        - postgresql
+        - redis-server
+      install:
+        # pip install
+        - pip install -r requirements.txt
+      before_script:
+        - cp .env.example .env
+        - psql -c "CREATE USER wms_api with CREATEDB PASSWORD '$PGPASS';" -U postgres
+        - psql -c 'CREATE DATABASE wms_api_test OWNER wms_api;' -U postgres
+        - flask db migrate
+        - flask db upgrade heads
+        - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+           > ./cc-test-reporter
+        - chmod +x ./cc-test-reporter
+        - ./cc-test-reporter before-build
+      script:
+        - pytest -v -ra --color=yes --tb=auto -p no:warnings --cov-report=xml
+      after_script:
+        - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+    - stage: deploy
+      if: branch = master OR branch = develop OR branch = test
+      before_install:
+        - openssl aes-256-cbc -K $encrypted_2994780a0ad4_key -iv $encrypted_2994780a0ad4_iv
+           -in deploy_key.enc -out ./deploy_key -d
+      before_script:
+        - eval "$(ssh-agent -s)"
+        - chmod 600 ./deploy_key
+        - ssh-add ./deploy_key
+        - echo -e "Host $SERVER_TEST\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+        - ssh -i ./deploy_key -t $USER@$SERVER_TEST -o StrictHostKeyChecking=no pwd
+      script:
+        - echo "$TRAVIS_TAG"
+        - ssh -i ./deploy_key -t $USER@$SERVER_TEST -o StrictHostKeyChecking=no "cd $PROJECT_PATH && git pull && bash ./scripts/deploy.sh"
+      # if: commit_message =~ /(deploy|live)/
+      
