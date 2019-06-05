@@ -1,7 +1,7 @@
 # coding=utf-8
 import logging
 import os
-from wms import app
+from srm import app
 from dotenv import load_dotenv
 
 __author__ = 'Kien'

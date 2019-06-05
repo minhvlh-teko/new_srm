@@ -1,7 +1,7 @@
 services: docker
 env:
   global:
-    - PROJECT_PATH=/var/www/api-v2.wms.phongvu.vn
+    - PROJECT_PATH=/var/www/api-v2.srm.phongvu.vn
 sudo: required
 jobs:
   include:

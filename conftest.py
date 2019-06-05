@@ -9,8 +9,8 @@ _logger = logging.getLogger(__name__)
 
 @pytest.fixture(autouse=True)
 def app(request):
-    from wms import app
-    from wms.models import db
+    from srm import app
+    from srm.models import db
     # print("Start app and init db.......")
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
